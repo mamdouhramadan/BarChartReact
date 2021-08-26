@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/BarChartReact/static/css/main.b8a47494.chunk.css",
+    "main.js": "/BarChartReact/static/js/main.e4f663ca.chunk.js",
+    "main.js.map": "/BarChartReact/static/js/main.e4f663ca.chunk.js.map",
+    "runtime-main.js": "/BarChartReact/static/js/runtime-main.c1ce6d50.js",
+    "runtime-main.js.map": "/BarChartReact/static/js/runtime-main.c1ce6d50.js.map",
+    "static/css/2.68b64559.chunk.css": "/BarChartReact/static/css/2.68b64559.chunk.css",
+    "static/js/2.00dad7b3.chunk.js": "/BarChartReact/static/js/2.00dad7b3.chunk.js",
+    "static/js/2.00dad7b3.chunk.js.map": "/BarChartReact/static/js/2.00dad7b3.chunk.js.map",
+    "static/js/3.f6ad5e63.chunk.js": "/BarChartReact/static/js/3.f6ad5e63.chunk.js",
+    "static/js/3.f6ad5e63.chunk.js.map": "/BarChartReact/static/js/3.f6ad5e63.chunk.js.map",
+    "index.html": "/BarChartReact/index.html",
+    "static/css/2.68b64559.chunk.css.map": "/BarChartReact/static/css/2.68b64559.chunk.css.map",
+    "static/css/main.b8a47494.chunk.css.map": "/BarChartReact/static/css/main.b8a47494.chunk.css.map",
+    "static/js/2.00dad7b3.chunk.js.LICENSE.txt": "/BarChartReact/static/js/2.00dad7b3.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.c1ce6d50.js",
+    "static/css/2.68b64559.chunk.css",
+    "static/js/2.00dad7b3.chunk.js",
+    "static/css/main.b8a47494.chunk.css",
+    "static/js/main.e4f663ca.chunk.js"
+  ]
+}
