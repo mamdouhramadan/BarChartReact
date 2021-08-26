@@ -1,4 +1,5 @@
 {
+  "homepage": "http://mamdouhramadan.github.io/BarChartReact",
   "name": "shamseya-task",
   "version": "0.1.0",
   "private": true,
@@ -9,6 +10,7 @@
     "axios": "^0.21.1",
     "bootstrap": "^5.1.0",
     "date-fns": "^2.23.0",
+    "gh-pages": "^3.2.3",
     "jquery": "^3.6.0",
     "materialize-css": "^1.0.0-rc.2",
     "mdb-react-ui-kit": "^1.3.0",
@@ -20,6 +22,8 @@
     "web-vitals": "^1.0.1"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
