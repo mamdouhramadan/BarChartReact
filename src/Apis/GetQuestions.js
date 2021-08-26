@@ -13,18 +13,11 @@ const Header = {
     }
 };
 
-
-
 const Get_Questions = async () => {
 
     await axios.get(URL, Header).then(res => {
 
-       
-        // console.log('Questions: ' + res.data);
-
         QuestionsList = res.data[0].questions;
-
-        //console.log(JSON.stringify(QuestionsList , null , 4))
 
     }).catch(err => {
         alert(err);

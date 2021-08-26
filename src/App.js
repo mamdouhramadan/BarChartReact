@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import DatePicker from './Components/DatePicker/DatePicker';
-import Get_data, { Result, ReviewsList } /* , { ReviewsList }*/ from './Apis/GetReviews';
+import Get_data, { ReviewsList } from './Apis/GetReviews';
 import Spinner from './Components/Spinner/index';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import VerticalBarchart from './Components/BarChart/VerticalBarchart';
 import GetQuestions /*,{ QuestionsList } */ from './Apis/GetQuestions';
-import M from "materialize-css";
-
-import ReviewsDetails from './Components/ReviewsDetails';
+import ReviewsDetails from './Components/ReviewsDetailes/ReviewsDetails';
+import InitDatePicker from './Utilites/JsComponents/InitDatePicker';
+import InitToolTip from './Utilites/JsComponents/InitToolTip';
+import InitCollape from './Utilites/JsComponents/InitCollape';
+import InitModal from './Utilites/JsComponents/InitModal';
+import FloatButton from './Components/FloatButton.js/FloatButton';
 function App() {
 
   const [spinner_status, setSpinner] = useState(false)
@@ -18,85 +19,65 @@ function App() {
   const [SubmitBtnDisabled, setSubmitBtndisabled] = useState(true)
 
   const GetData = async (e) => {
+    // Prevent Page Refresh 
     e.preventDefault();
+    // Display Spinner Until Request Done
     setSpinner(true)
+    // Get Field Value start_date 
     const start_date = e.target.elements.StartDate.value;
+    // Get Field Value  end_date
     const end_date = e.target.elements.EndDate.value;
+    // Start Getting Data 
     await Get_data(start_date, end_date);
+    // Hide Spinner After Responed 
     setSpinner(false)
   }
 
   useEffect(() => {
-    //M.AutoInit();
+    // Fire and Iniit Function
     GetQuestions();
+    // Get Value of StartDate Field 
     var StartDateInput = document.getElementById('StartDate');
+    // Get Value of EndDate Field 
     var EndDateInput = document.getElementById('EndDate');
-    M.Datepicker.init(StartDateInput, {
-      format: 'yyyy-mm-dd',
-      autoClose: true,
-      yearRange: [2017, new Date().getFullYear()],
-      showClearBtn: true,
-      onClose: () => {
-        setdisabled(false);
-        setSDate(StartDateInput.value)
-        console.log(sDate ? sDate : '')
-      }
-    });
 
-    M.Datepicker.init(EndDateInput, {
-      format: 'yyyy-mm-dd',
-      autoClose: true,
-      minDate: new Date(sDate),
-      yearRange: [new Date(sDate).getFullYear(), new Date().getFullYear()],
-      showClearBtn: true,
-      onClose: () => {
-        setdisabled(false);
-        setSDate(EndDateInput.value);
-        setSubmitBtndisabled(false)
-      }
-    });
+    // Fire And Init Datepicker for StartDateInput
+    InitDatePicker(StartDateInput, 2017, () => {
+      setdisabled(false);
+      setSDate(StartDateInput.value)
+    })
+    // Fire And Init Datepicker for EndDateInput
+    InitDatePicker(EndDateInput, new Date(sDate).getFullYear(), () => {
+      setSDate(EndDateInput.value);
+      setSubmitBtndisabled(false)
+    })
 
-
-    var elems = document.querySelectorAll('.detailes-modal-btn');
-    M.Tooltip.init(elems);
-
-    elems = document.querySelectorAll('.collapsible');
-    M.Collapsible.init(elems);
-
+    //Fire and Init Tooltip
+    InitToolTip('.detailes-modal-btn');
+    //Fire and Init Collapse
+    InitCollape('.collapsible');
 
   }, [sDate]);
 
-  const openDetailes = () => {
-    var elems = document.querySelectorAll('.modal');
-    M.Modal.init(elems);
-  }
   return (
 
     <div className="container">
 
-      <div className="w-100 m-auto py-5">
-        <DatePicker Get_Data={GetData} disabled={endDateDisabled} btnDisabled={SubmitBtnDisabled} />
-        <VerticalBarchart />
+      {/* Display Date Picker Component  */}
+      <DatePicker Get_Data={GetData} disabled={endDateDisabled} btnDisabled={SubmitBtnDisabled} />
 
-        {spinner_status && <Spinner />}
+      {/* Display Barchart  */}
+      <VerticalBarchart />
 
+      {/* Display Snipper */}
+      {spinner_status && <Spinner />}
 
-        {
-          Object.entries(ReviewsList).length > 0 &&
-          // <a className="waves-effect waves-light btn modal-trigger" href="#detailes-modal" onClick={() => openDetailes()}>Modal</a>
-          <div className="fixed-action-btn">
-            <a className="btn-floating btn-large red modal-trigger detailes-modal-btn" href="#detailes-modal" data-position="top" data-tooltip="More Info" onClick={() => openDetailes()} >
-              <i className="large material-icons">grid_on</i>
-            </a>
-          </div>
-        }
+      {/* Dipslay Floating Button If ReviewsList items > 0  */}
+      {Object.entries(ReviewsList).length > 0 && <FloatButton onClick={() => InitModal('.modal')} />}
 
-        <div id="detailes-modal" className="modal">
-          <ReviewsDetails />
-        </div>
+      {/* Display Modal Component  */}
+      <div id="detailes-modal" className="modal"><ReviewsDetails /></div>
 
-
-      </div>
     </div>
   );
 }

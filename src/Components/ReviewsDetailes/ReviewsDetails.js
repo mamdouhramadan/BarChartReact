@@ -1,5 +1,5 @@
 import React from 'react'
-import { ReviewsList } from '../Apis/GetReviews'
+import { ReviewsList } from '../../Apis/GetReviews'
 
 function ReviewsDetails() {
     return (

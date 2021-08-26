@@ -16,9 +16,7 @@ function VerticalBarchart() {
         <div>
             <svg width="960" height="500" style={{ fontSize: 14 }}>
                 <g transform="translate(40,20)">
-
                     <g className="x axis" transform={`translate(0,${ChartLineHeight})`} fill={BarLinesColor}>
-
                         {ListData.map(([key, value], index) => {
                             return (
                                 <g key={index} className="tick" transform={`translate(${DistanceBetwenBars * (index + 1)},0)`} style={{ opacity: 1 }}>

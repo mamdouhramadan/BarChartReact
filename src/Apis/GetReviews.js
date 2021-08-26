@@ -14,8 +14,6 @@ const Header = {
     }
 };
 
-
-
 const Get_data = async (date_from, date_end) => {
 
     const URL_Q = `${URL}?date_from=${date_from}&date_to=${date_end}`;
@@ -24,16 +22,13 @@ const Get_data = async (date_from, date_end) => {
 
         Result = res.data.line_chart_data
         console.log(Result)
-        if (Result != undefined || Result != null) {
-
-            ReviewsList = Result.sort(SortByDate).reduce(SplitDataByMonth, {})
+        if (Result !== undefined || Result != null) {
+            ReviewsList = Result.sort(SortByDate).reduce(SplitDataByMonth, {});
         } else {
-            alert('Please Select Different Date')
+            alert('Please Select Different Date');
         }
 
-
     }).catch(err => {
-
         console.log(err)
         alert(err)
     })
