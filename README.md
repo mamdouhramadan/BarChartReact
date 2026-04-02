@@ -1,3 +1,25 @@
+# Gold Fix Tracker
+
+A Create React App dashboard for **gold fix price history** from the [St. Louis Fed FRED API](https://fred.stlouisfed.org/). It shows line, bar, pie, and donut charts (pie/donut reflect **day-over-day direction counts**—up, down, flat—not portfolio weights).
+
+## FRED API key and local development
+
+1. Request a free API key: [FRED API key](https://fred.stlouisfed.org/docs/api/api_key.html).
+2. Copy `.env.example` to `.env.local` and set `FRED_API_KEY=your_key`.
+3. Run `npm start`. The dev server uses [`src/setupProxy.js`](src/setupProxy.js) to proxy `/api/fred` to `https://api.stlouisfed.org/fred` and inject the key **server-side** so it is not exposed in the browser bundle.
+
+## Production and static hosting (e.g. GitHub Pages)
+
+The CRA dev proxy **does not run** for `npm run build` output on static hosts. The app cannot call FRED from the browser without a proxy or backend unless you expose a key in the client (not recommended).
+
+Options:
+
+- **Netlify / Vercel serverless function** (or similar) that forwards requests to FRED with the key stored in host secrets, then set `REACT_APP_FRED_PROXY_URL` to that function’s base URL when building.
+- **Deploy a small backend** that proxies FRED.
+- **GitHub Pages alone**: either accept that data fetch is unavailable without a separate proxy, or use a public third-party proxy you trust (documented in your own deployment).
+
+---
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

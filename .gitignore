@@ -5,6 +5,15 @@
 /.pnp
 .pnp.js
 
+# specstory
+.specstory
+.vscode
+.specstory/
+.vscode/
+.specstory/
+.vscode/*
+.specstory/*
+
 # testing
 /coverage
 
