@@ -16,6 +16,7 @@ const goldKpis = ({ observations = [], seriesId = '' }) => {
   const changePct = ((latestPoint.value - firstPoint.value) / firstPoint.value) * 100;
 
   return {
+    seriesId,
     seriesTitle,
     startPrice: Number(firstPoint.value.toFixed(2)),
     endPrice: Number(latestPoint.value.toFixed(2)),

@@ -13,7 +13,7 @@ const chartDataFromGold = (observations = []) => {
     {
       id: 'gold',
       data: prices,
-      label: 'Gold (USD / t oz)',
+      labelKey: 'lineSeriesLabel',
       showMark: true
     }
   ];
@@ -23,11 +23,11 @@ const chartDataFromGold = (observations = []) => {
   if (sorted.length >= 1) {
     const firstPrice = sorted[0].value;
     const lastPrice = sorted[sorted.length - 1].value;
-    barLabels = ['Period start', 'Period end'];
+    barLabels = ['periodStart', 'periodEnd'];
     barSeries = [
       {
         data: [firstPrice, lastPrice],
-        label: 'USD / t oz'
+        labelKey: 'barUsdLabel'
       }
     ];
   }
@@ -52,14 +52,14 @@ const chartDataFromGold = (observations = []) => {
     }
 
     returnBuckets = [
-      { key: 'up', label: 'Up days', count: up },
-      { key: 'down', label: 'Down days', count: down },
-      { key: 'flat', label: 'Flat days', count: flat }
+      { key: 'up', labelKey: 'pieUp', count: up },
+      { key: 'down', labelKey: 'pieDown', count: down },
+      { key: 'flat', labelKey: 'pieFlat', count: flat }
     ].filter((bucket) => bucket.count > 0);
 
     pieSeries = returnBuckets.map((bucket, index) => ({
       id: index,
-      label: bucket.label,
+      labelKey: bucket.labelKey,
       value: bucket.count
     }));
   }

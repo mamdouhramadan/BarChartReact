@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Fade from '@mui/material/Fade';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -10,13 +12,46 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { BarChart, LineChart, PieChart } from '@mui/x-charts';
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip
+} from 'chart.js';
+import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
 import useGoldStore from '../store/useGoldStore';
 import chartDataFromGold from '../utils/chartDataFromGold';
 
+ChartJS.register(
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip
+);
+
 const PIE_DEFAULT_COLORS = ['#b8860b', '#64748b', '#0f766e', '#c2410c', '#1e3a5f'];
 
-function PieSideLegend({ pieSeries }) {
+const baseAnimation = {
+  duration: 1100,
+  easing: 'easeOutQuart'
+};
+
+function chartFontFamily(theme) {
+  return theme.typography.fontFamily;
+}
+
+function PieSideLegend({ pieSeries, translate }) {
   return (
     <Grid item xs={12} md={5}>
       <Stack spacing={1.25} sx={{ pt: { xs: 0, md: 1 }, maxHeight: { md: 360 }, overflowY: 'auto' }}>
@@ -35,10 +70,10 @@ function PieSideLegend({ pieSeries }) {
             />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {slice.label}
+                {translate(`chart.${slice.labelKey}`)}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {slice.value} day{slice.value === 1 ? '' : 's'} in range
+                {translate('chart.pieLegendDays', { count: slice.value })}
               </Typography>
             </Box>
           </Box>
@@ -89,20 +124,189 @@ function ChartCard({ title, subtitle, children, gradient, eyebrow }) {
 }
 
 function GoldCharts() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const observations = useGoldStore((state) => state.observations);
-  const seriesId = useGoldStore((state) => state.seriesId);
   const [activeTab, setActiveTab] = useState(0);
   const chartData = useMemo(() => chartDataFromGold(observations), [observations]);
   const lineWidth = Math.max(isSmallScreen ? 640 : 860, chartData.dateLabels.length * 28);
-  const barWidth = 420;
-  const radialWidth = isSmallScreen ? 320 : 380;
+  const radialSize = isSmallScreen ? 320 : 380;
+
+  const lineChartData = useMemo(() => {
+    if (!chartData.hasData || !chartData.lineSeries[0]) {
+      return null;
+    }
+    const s = chartData.lineSeries[0];
+    return {
+      labels: chartData.dateLabels,
+      datasets: [
+        {
+          label: t(`chart.${s.labelKey}`),
+          data: s.data,
+          borderColor: '#b8860b',
+          backgroundColor: 'rgba(184, 134, 11, 0.14)',
+          borderWidth: 2,
+          pointRadius: chartData.dateLabels.length > 80 ? 0 : 3,
+          pointHoverRadius: 5,
+          tension: 0.28,
+          fill: true
+        }
+      ]
+    };
+  }, [chartData, t]);
+
+  const lineOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: baseAnimation,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { family: chartFontFamily(theme) },
+            padding: 16,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+          titleFont: { family: chartFontFamily(theme) },
+          bodyFont: { family: chartFontFamily(theme) },
+          padding: 12,
+          cornerRadius: 8
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { family: chartFontFamily(theme), size: 11 },
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 24
+          }
+        },
+        y: {
+          grid: { color: 'rgba(15, 23, 42, 0.06)' },
+          ticks: {
+            font: { family: chartFontFamily(theme) },
+            callback: (value) => `$${Number(value).toLocaleString()}`
+          }
+        }
+      }
+    }),
+    [theme]
+  );
+
+  const barChartData = useMemo(() => {
+    if (!chartData.hasBarData || !chartData.barSeries[0]) {
+      return null;
+    }
+    const s = chartData.barSeries[0];
+    return {
+      labels: chartData.barLabels.map((key) => t(`chart.${key}`)),
+      datasets: [
+        {
+          label: t(`chart.${s.labelKey}`),
+          data: s.data,
+          backgroundColor: [theme.palette.primary.main, theme.palette.primary.dark || '#1e3a5f'],
+          borderRadius: 10,
+          borderSkipped: false
+        }
+      ]
+    };
+  }, [chartData, t, theme.palette.primary.dark, theme.palette.primary.main]);
+
+  const barOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { ...baseAnimation, delay: (ctx) => (ctx.type === 'data' ? ctx.dataIndex * 120 : 0) },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: chartFontFamily(theme) }, padding: 16 }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: $${Number(ctx.raw).toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: chartFontFamily(theme) } }
+        },
+        y: {
+          grid: { color: 'rgba(15, 23, 42, 0.06)' },
+          ticks: {
+            font: { family: chartFontFamily(theme) },
+            callback: (value) => `$${Number(value).toLocaleString()}`
+          }
+        }
+      }
+    }),
+    [theme]
+  );
+
+  const pieChartData = useMemo(() => {
+    if (!chartData.hasPieData) {
+      return null;
+    }
+    return {
+      labels: chartData.pieSeries.map((p) => t(`chart.${p.labelKey}`)),
+      datasets: [
+        {
+          data: chartData.pieSeries.map((p) => p.value),
+          backgroundColor: chartData.pieSeries.map((_, i) => PIE_DEFAULT_COLORS[i % PIE_DEFAULT_COLORS.length]),
+          borderColor: '#fff',
+          borderWidth: 2,
+          hoverOffset: 12
+        }
+      ]
+    };
+  }, [chartData, t]);
+
+  const pieOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        ...baseAnimation,
+        animateRotate: true,
+        animateScale: true
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+          bodyFont: { family: chartFontFamily(theme) },
+          padding: 12,
+          cornerRadius: 8
+        }
+      }
+    }),
+    [theme]
+  );
+
+  const doughnutOptions = useMemo(
+    () => ({
+      ...pieOptions,
+      cutout: '58%'
+    }),
+    [pieOptions]
+  );
 
   if (!chartData.hasData) {
     return (
       <Alert severity="info" variant="outlined">
-        No gold observations are available for this range. Try widening the dates or pick another LBMA series.
+        {t('chart.noObservations')}
       </Alert>
     );
   }
@@ -115,11 +319,11 @@ function GoldCharts() {
         sx={{ mb: 2, alignItems: { md: 'center' }, justifyContent: 'space-between' }}
       >
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-          <Chip label={`FRED · ${seriesId}`} variant="outlined" color="primary" />
-          <Chip label={`Fix prints: ${chartData.dateLabels.length}`} variant="outlined" />
+          <Chip label={t('chart.dataBadge')} variant="outlined" color="primary" />
+          <Chip label={t('chart.fixPrints', { count: chartData.dateLabels.length })} variant="outlined" />
         </Stack>
         <Typography variant="caption" color="text.secondary">
-          Line tracks the fix level; pie and donut summarize day-over-day direction counts.
+          {t('chart.tabsHint')}
         </Typography>
       </Stack>
       <Tabs
@@ -132,149 +336,111 @@ function GoldCharts() {
           minHeight: 52,
           '& .MuiTabs-indicator': {
             height: 3,
-            borderRadius: 999
+            borderRadius: 999,
+            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
           }
         }}
       >
-        <Tab label="Line" id="chart-tab-0" aria-controls="chart-panel-0" sx={{ minHeight: 52 }} />
-        <Tab label="Bar" id="chart-tab-1" aria-controls="chart-panel-1" sx={{ minHeight: 52 }} />
-        <Tab label="Pie" id="chart-tab-2" aria-controls="chart-panel-2" sx={{ minHeight: 52 }} />
-        <Tab label="Donut" id="chart-tab-3" aria-controls="chart-panel-3" sx={{ minHeight: 52 }} />
+        <Tab label={t('chart.tabLine')} id="chart-tab-0" aria-controls="chart-panel-0" sx={{ minHeight: 52 }} />
+        <Tab label={t('chart.tabBar')} id="chart-tab-1" aria-controls="chart-panel-1" sx={{ minHeight: 52 }} />
+        <Tab label={t('chart.tabPie')} id="chart-tab-2" aria-controls="chart-panel-2" sx={{ minHeight: 52 }} />
+        <Tab label={t('chart.tabDonut')} id="chart-tab-3" aria-controls="chart-panel-3" sx={{ minHeight: 52 }} />
       </Tabs>
 
-      {activeTab === 0 ? (
-        <ChartCard
-          eyebrow="Trajectory"
-          title="Fix level through time"
-          subtitle="London bullion market gold fix in U.S. dollars per troy ounce, plotted across your selected window."
-          gradient="linear-gradient(180deg, rgba(180,134,11,0.12) 0%, rgba(255,253,249,0.98) 100%)"
-        >
-          <Box sx={{ width: '100%', overflowX: 'auto' }}>
-            <LineChart
-              xAxis={[{ scaleType: 'point', data: chartData.dateLabels }]}
-              series={chartData.lineSeries}
-              width={lineWidth}
-              height={390}
-              margin={{ top: 20, right: 24, bottom: 78, left: 56 }}
-              slotProps={{
-                legend: {
-                  direction: 'row',
-                  position: { vertical: 'bottom', horizontal: 'middle' },
-                  padding: 0
-                }
-              }}
-            />
+      {activeTab === 0 && lineChartData ? (
+        <Fade in timeout={480}>
+          <Box>
+            <ChartCard
+              eyebrow={t('chart.lineEyebrow')}
+              title={t('chart.lineTitle')}
+              subtitle={t('chart.lineSubtitle')}
+              gradient="linear-gradient(180deg, rgba(180,134,11,0.12) 0%, rgba(255,253,249,0.98) 100%)"
+            >
+              <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                <Box sx={{ width: lineWidth, height: 390, position: 'relative' }}>
+                  <Line data={lineChartData} options={lineOptions} />
+                </Box>
+              </Box>
+            </ChartCard>
           </Box>
-        </ChartCard>
+        </Fade>
       ) : null}
 
       {activeTab === 1 ? (
-        <ChartCard
-          eyebrow="Endpoints"
-          title="Window open vs close"
-          subtitle="Compare the first and last fix in this range — a simple read on directional drift."
-          gradient="linear-gradient(180deg, rgba(30,64,175,0.08) 0%, rgba(255,253,249,0.98) 100%)"
-        >
-          {chartData.hasBarData ? (
-            <Box sx={{ width: '100%', overflowX: 'auto' }}>
-              <BarChart
-                xAxis={[{ scaleType: 'band', data: chartData.barLabels }]}
-                series={[
-                  {
-                    ...chartData.barSeries[0],
-                    color: theme.palette.primary.main
-                  }
-                ]}
-                width={barWidth}
-                height={390}
-                margin={{ top: 20, right: 24, bottom: 78, left: 48 }}
-                borderRadius={10}
-                slotProps={{
-                  legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    padding: 0
-                  }
-                }}
-              />
-            </Box>
-          ) : (
-            <Alert severity="info">Not enough data for a bar comparison.</Alert>
-          )}
-        </ChartCard>
+        <Fade in timeout={480}>
+          <Box>
+            <ChartCard
+              eyebrow={t('chart.barEyebrow')}
+              title={t('chart.barTitle')}
+              subtitle={t('chart.barSubtitle')}
+              gradient="linear-gradient(180deg, rgba(30,64,175,0.08) 0%, rgba(255,253,249,0.98) 100%)"
+            >
+              {chartData.hasBarData && barChartData ? (
+                <Box sx={{ width: '100%', maxWidth: 520, mx: 'auto', height: 390, position: 'relative' }}>
+                  <Bar data={barChartData} options={barOptions} />
+                </Box>
+              ) : (
+                <Alert severity="info">{t('chart.barNotEnough')}</Alert>
+              )}
+            </ChartCard>
+          </Box>
+        </Fade>
       ) : null}
 
       {activeTab === 2 ? (
-        <ChartCard
-          eyebrow="Daily rhythm"
-          title="Day-over-day direction mix"
-          subtitle="Each slice counts trading days where the fix moved up, down, or was flat versus the prior print — not a weighting of holdings."
-          gradient="linear-gradient(180deg, rgba(217,119,6,0.1) 0%, rgba(255,253,249,0.98) 100%)"
-        >
-          {chartData.hasPieData ? (
-            <Grid container spacing={2} alignItems="flex-start">
-              <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <PieChart
-                  series={[
-                    {
-                      data: chartData.pieSeries,
-                      cornerRadius: 6,
-                      paddingAngle: 2,
-                      highlightScope: { faded: 'global', highlighted: 'item' },
-                      faded: { innerRadius: 12, additionalRadius: -12, color: 'gray' }
-                    }
-                  ]}
-                  width={radialWidth}
-                  height={390}
-                  margin={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
-              </Grid>
-              <PieSideLegend pieSeries={chartData.pieSeries} />
-            </Grid>
-          ) : (
-            <Alert severity="info">Need at least two fix prints in range to score up/down/flat days.</Alert>
-          )}
-        </ChartCard>
+        <Fade in timeout={480}>
+          <Box>
+            <ChartCard
+              eyebrow={t('chart.pieEyebrow')}
+              title={t('chart.pieTitle')}
+              subtitle={t('chart.pieSubtitle')}
+              gradient="linear-gradient(180deg, rgba(217,119,6,0.1) 0%, rgba(255,253,249,0.98) 100%)"
+            >
+              {chartData.hasPieData && pieChartData ? (
+                <Grid container spacing={2} alignItems="flex-start">
+                  <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ width: radialSize, height: 390, position: 'relative' }}>
+                      <Pie data={pieChartData} options={pieOptions} />
+                    </Box>
+                  </Grid>
+                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} />
+                </Grid>
+              ) : (
+                <Alert severity="info">{t('chart.pieNeedTwo')}</Alert>
+              )}
+            </ChartCard>
+          </Box>
+        </Fade>
       ) : null}
 
       {activeTab === 3 ? (
-        <ChartCard
-          eyebrow="Presentation"
-          title="Radial direction mix"
-          subtitle="Same daily-direction counts as the pie tab, tightened for slide-friendly viewing."
-          gradient="linear-gradient(180deg, rgba(23,32,51,0.08) 0%, rgba(255,253,249,0.98) 100%)"
-        >
-          {chartData.hasPieData ? (
-            <Grid container spacing={2} alignItems="flex-start">
-              <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <PieChart
-                  series={[
-                    {
-                      data: chartData.pieSeries,
-                      innerRadius: 72,
-                      cornerRadius: 6,
-                      paddingAngle: 2,
-                      highlightScope: { faded: 'global', highlighted: 'item' },
-                      faded: { innerRadius: 56, additionalRadius: -12, color: 'gray' }
-                    }
-                  ]}
-                  width={radialWidth}
-                  height={390}
-                  margin={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                  slotProps={{ legend: { hidden: true } }}
-                />
-              </Grid>
-              <PieSideLegend pieSeries={chartData.pieSeries} />
-            </Grid>
-          ) : (
-            <Alert severity="info">Need at least two fix prints in range to score up/down/flat days.</Alert>
-          )}
-        </ChartCard>
+        <Fade in timeout={480}>
+          <Box>
+            <ChartCard
+              eyebrow={t('chart.donutEyebrow')}
+              title={t('chart.donutTitle')}
+              subtitle={t('chart.donutSubtitle')}
+              gradient="linear-gradient(180deg, rgba(23,32,51,0.08) 0%, rgba(255,253,249,0.98) 100%)"
+            >
+              {chartData.hasPieData && pieChartData ? (
+                <Grid container spacing={2} alignItems="flex-start">
+                  <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ width: radialSize, height: 390, position: 'relative' }}>
+                      <Doughnut data={pieChartData} options={doughnutOptions} />
+                    </Box>
+                  </Grid>
+                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} />
+                </Grid>
+              ) : (
+                <Alert severity="info">{t('chart.pieNeedTwo')}</Alert>
+              )}
+            </ChartCard>
+          </Box>
+        </Fade>
       ) : null}
 
       <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-        Source: FRED. Gold fixes can skip days when the market is closed; pie and donut require consecutive prints to infer direction.
+        {t('chart.footnote')}
       </Typography>
     </Box>
   );

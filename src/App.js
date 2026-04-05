@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,6 +12,7 @@ import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import AppNavbar from './components/AppNavbar';
 import GoldRangeForm from './components/DatePicker';
 import GoldCharts from './components/GoldCharts';
 import GoldSummaryCards from './components/GoldSummaryCards';
@@ -18,11 +20,21 @@ import Spinner from './components/Spinner';
 import useGoldStore, { DEFAULT_GOLD_SERIES_ID } from './store/useGoldStore';
 import exportGoldSeriesCsv from './utils/exportGoldSeriesCsv';
 import goldKpis from './utils/goldKpis';
+import i18nApp from './i18n';
 
 const DEFAULT_END_DATE = dayjs().subtract(1, 'day');
 const DEFAULT_START_DATE = DEFAULT_END_DATE.subtract(6, 'month').startOf('month');
 
+function resolveUserMessage(t, message) {
+  if (!message) return '';
+  if (typeof message === 'string' && (message.startsWith('errors.') || message.startsWith('app.'))) {
+    return t(message);
+  }
+  return message;
+}
+
 function App() {
+  const { t, i18n } = useTranslation();
   const observations = useGoldStore((state) => state.observations);
   const dateRange = useGoldStore((state) => state.dateRange);
   const seriesId = useGoldStore((state) => state.seriesId);
@@ -33,6 +45,14 @@ function App() {
   const setDateRange = useGoldStore((state) => state.setDateRange);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = t('app.title');
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) {
+      meta.setAttribute('content', t('app.metaDescription'));
+    }
+  }, [t, i18n.language]);
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -46,7 +66,9 @@ function App() {
           seriesId: DEFAULT_GOLD_SERIES_ID
         });
       } catch (initialError) {
-        setSnackbarMessage(initialError.message || 'Unable to initialize the gold tracker.');
+        setSnackbarMessage(
+          resolveUserMessage((key) => i18nApp.t(key), initialError.message) || i18nApp.t('app.initFailed')
+        );
         setSnackbarOpen(true);
       }
     };
@@ -59,6 +81,7 @@ function App() {
   const submitDisabled = !dateRange.from || !dateRange.to;
   const showEmptyState = !isLoading && Boolean(dateRange.from && dateRange.to) && observations.length === 0 && !error;
   const kpis = useMemo(() => goldKpis({ observations, seriesId }), [observations, seriesId]);
+  const seriesTitleLabel = kpis ? t(`series.${kpis.seriesId}`) : t('app.londonPmDefault');
 
   const handleStartChange = (value) => {
     setDateRange({
@@ -100,7 +123,7 @@ function App() {
         seriesId
       });
     } catch (fetchError) {
-      setSnackbarMessage(fetchError.message || 'Something went wrong while loading gold data.');
+      setSnackbarMessage(resolveUserMessage(t, fetchError.message) || t('app.loadFailed'));
       setSnackbarOpen(true);
     }
   };
@@ -110,11 +133,12 @@ function App() {
       sx={{
         minHeight: '100vh',
         background:
-          'radial-gradient(circle at top left, rgba(180,134,11,0.12), transparent 32%), radial-gradient(circle at top right, rgba(30,41,59,0.12), transparent 28%), linear-gradient(180deg, #f8f4e8 0%, #f4f1ea 52%, #eef2f0 100%)',
-        py: { xs: 3, md: 6 }
+          'radial-gradient(circle at top left, rgba(180,134,11,0.12), transparent 32%), radial-gradient(circle at top right, rgba(30,41,59,0.12), transparent 28%), linear-gradient(180deg, #f8f4e8 0%, #f4f1ea 52%, #eef2f0 100%)'
       }}
     >
-      <Container maxWidth="lg">
+      <AppNavbar />
+
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3 } }}>
         <Stack spacing={3.5}>
           <Paper
             elevation={0}
@@ -142,20 +166,27 @@ function App() {
             <Grid container spacing={3} sx={{ position: 'relative' }}>
               <Grid item xs={12} md={7}>
                 <Typography variant="overline" sx={{ letterSpacing: 2.8, color: 'rgba(254,243,199,0.88)' }}>
-                  Precious Metals Desk
+                  {t('app.preciousMetalsDesk')}
                 </Typography>
-                <Typography variant="h3" sx={{ mt: 1, maxWidth: 760, color: '#fffbeb', fontFamily: '"IBM Plex Serif", Georgia, serif' }}>
-                  Gold fix tracker powered by FRED historical prints.
+                <Typography
+                  variant="h3"
+                  sx={{
+                    mt: 1,
+                    maxWidth: 760,
+                    color: '#fffbeb',
+                    fontFamily: (theme) => theme.typography.h3.fontFamily
+                  }}
+                >
+                  {t('app.heroTitle')}
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1.5, maxWidth: 720, color: 'rgba(226,232,240,0.82)' }}>
-                  Follow London bullion market gold fixes in USD per troy ounce, chart the path across any window you choose,
-                  and export the same series you see on screen.
+                  {t('app.heroBody')}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 2.5, flexWrap: 'wrap', gap: 1 }}>
-                  <Chip label="React 17" variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
-                  <Chip label="MUI X Charts" variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
-                  <Chip label="FRED API" variant="filled" sx={{ bgcolor: 'rgba(251,191,36,0.2)', color: '#fffbeb' }} />
-                  <Chip label="CSV export" variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
+                  <Chip label={t('app.chipReact')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
+                  <Chip label={t('app.chipChartJs')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
+                  <Chip label={t('app.chipDataApi')} variant="filled" sx={{ bgcolor: 'rgba(251,191,36,0.2)', color: '#fffbeb' }} />
+                  <Chip label={t('app.chipCsv')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
                 </Stack>
               </Grid>
               <Grid item xs={12} md={5}>
@@ -171,20 +202,19 @@ function App() {
                 >
                   <Stack spacing={1.25}>
                     <Typography variant="overline" sx={{ color: 'rgba(226,232,240,0.85)', letterSpacing: 1.6 }}>
-                      Live lens
+                      {t('app.liveLens')}
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#fffbeb' }}>
-                      {kpis ? kpis.seriesTitle : 'London PM gold fix'}
+                      {seriesTitleLabel}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'rgba(226,232,240,0.78)' }}>
-                      Data comes from the St. Louis Fed FRED observations API. In development, a local proxy injects your API key
-                      so the browser never bundles the secret.
+                      {t('app.dataExplainer')}
                     </Typography>
                     <Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
                     <Grid container spacing={1.5}>
                       <Grid item xs={6}>
                         <Typography variant="caption" sx={{ color: 'rgba(226,232,240,0.72)' }}>
-                          Series ID
+                          {t('app.seriesId')}
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#fff', fontWeight: 700 }}>
                           {seriesId}
@@ -192,7 +222,7 @@ function App() {
                       </Grid>
                       <Grid item xs={6}>
                         <Typography variant="caption" sx={{ color: 'rgba(226,232,240,0.72)' }}>
-                          Prints loaded
+                          {t('app.printsLoaded')}
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#fff', fontWeight: 700 }}>
                           {observations.length}
@@ -200,10 +230,12 @@ function App() {
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="caption" sx={{ color: 'rgba(226,232,240,0.72)' }}>
-                          Window
+                          {t('app.window')}
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#fff', fontWeight: 700 }}>
-                          {dateRange.from && dateRange.to ? `${dateRange.from} -> ${dateRange.to}` : 'Set a range below'}
+                          {dateRange.from && dateRange.to
+                            ? `${dateRange.from} -> ${dateRange.to}`
+                            : t('app.setRangeBelow')}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -215,7 +247,7 @@ function App() {
 
           {error ? (
             <Alert severity="warning" variant="outlined">
-              {error}
+              {resolveUserMessage(t, error)}
             </Alert>
           ) : null}
 
@@ -228,11 +260,11 @@ function App() {
               background: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(252,250,242,0.96) 100%)'
             }}
           >
-            <Typography variant="h6" sx={{ mb: 0.75 }}>
-              Range & series
+            <Typography variant="h6" sx={{ mb: 0.5 }}>
+              {t('app.rangeSeries')}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Pick a calendar window and a curated LBMA gold fix series. Use “Load gold series” after changing inputs.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+              {t('app.rangeSeriesHint')}
             </Typography>
             <GoldRangeForm
               btnDisabled={submitDisabled}
@@ -246,8 +278,8 @@ function App() {
               startDate={startDate}
             />
             {showEmptyState ? (
-              <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
-                No observations returned for that combination. Try a wider date range or verify your FRED key and proxy setup.
+              <Alert severity="info" variant="outlined" sx={{ mt: 2.5 }}>
+                {t('app.emptyObservations')}
               </Alert>
             ) : null}
           </Paper>
@@ -272,11 +304,10 @@ function App() {
               >
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h6" sx={{ mb: 0.75 }}>
-                    Chart studio
+                    {t('app.chartStudio')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Line and bar focus on fix levels; pie and donut summarize how often day-over-day moves were positive,
-                    negative, or flat inside your window.
+                    {t('app.chartStudioBody')}
                   </Typography>
                 </Box>
                 <Button
@@ -286,7 +317,7 @@ function App() {
                   disabled={observations.length === 0}
                   sx={{ flexShrink: 0, alignSelf: { xs: 'stretch', md: 'center' } }}
                 >
-                  Export active CSV
+                  {t('app.exportCsv')}
                 </Button>
               </Stack>
             </Box>
@@ -294,8 +325,7 @@ function App() {
           </Paper>
 
           <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-            Gold tracker built with React, Material UI, Zustand, and FRED. Static hosts like GitHub Pages need a separate proxy —
-            see README.
+            {t('app.footer')}
           </Typography>
         </Stack>
       </Container>

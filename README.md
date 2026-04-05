@@ -1,92 +1,139 @@
 # Gold Fix Tracker
 
-A Create React App dashboard for **gold fix price history** from the [St. Louis Fed FRED API](https://fred.stlouisfed.org/). It shows line, bar, pie, and donut charts (pie/donut reflect **day-over-day direction counts**—up, down, flat—not portfolio weights).
+A responsive **gold price dashboard** built with React. It loads public historical data in the browser (no backend, no API keys), lets you pick a date range, and visualizes prices with **Chart.js** (line, bar, pie, donut). **English** and **Arabic** are supported, with **RTL** layout and **Almarai** typography for Arabic.
 
-## FRED API key and local development
-
-1. Request a free API key: [FRED API key](https://fred.stlouisfed.org/docs/api/api_key.html).
-2. Copy `.env.example` to `.env.local` and set `FRED_API_KEY=your_key`.
-3. Run `npm start`. The dev server uses [`src/setupProxy.js`](src/setupProxy.js) to proxy `/api/fred` to `https://api.stlouisfed.org/fred` and inject the key **server-side** so it is not exposed in the browser bundle.
-
-## Production and static hosting (e.g. GitHub Pages)
-
-The CRA dev proxy **does not run** for `npm run build` output on static hosts. The app cannot call FRED from the browser without a proxy or backend unless you expose a key in the client (not recommended).
-
-Options:
-
-- **Netlify / Vercel serverless function** (or similar) that forwards requests to FRED with the key stored in host secrets, then set `REACT_APP_FRED_PROXY_URL` to that function’s base URL when building.
-- **Deploy a small backend** that proxies FRED.
-- **GitHub Pages alone**: either accept that data fetch is unavailable without a separate proxy, or use a public third-party proxy you trust (documented in your own deployment).
+**Live site:** [https://mamdouhramadan.github.io/BarChartReact/](https://mamdouhramadan.github.io/BarChartReact/)  
+*(Updates automatically when `main` is pushed — see [Deployment](#deployment).)*
 
 ---
 
-# Getting Started with Create React App
+## Overview
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+| | |
+| --- | --- |
+| **Purpose** | Explore USD gold prices over a custom calendar window; export the filtered series as CSV. |
+| **Data** | [Free Gold API](https://freegoldapi.com/) — `GET https://freegoldapi.com/data/latest.json` (CORS-enabled, no authentication). One blended USD series; granularity varies by era (annual → monthly → daily). |
+| **Hosting** | Static build only: works on **GitHub Pages**, Netlify, or any static file host. |
 
-## Available Scripts
+Pie and donut charts summarize **day-over-day direction** (up / down / flat counts), not portfolio weights.
 
-In the project directory, you can run:
+---
 
-### `yarn start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **Navbar** with logo (`favicon.png`), brand, and **language menu** (no select label).
+- **Hero** + **live lens** card (series id, observation count, date window).
+- **Range & series** form: date window, gold series (single public dataset), **Load** action.
+- **Summary cards**: window move, open vs close, range high/low.
+- **Charts**: Line, Bar, Pie, Donut with tabbed UI; CSV export of the active window.
+- **Internationalization**: `i18next` / `react-i18next`; locale persisted in `localStorage` (`gold-tracker-locale`); fallback follows browser language.
+- **Theming**: Material UI with dynamic **LTR/RTL** and **Almarai** for Arabic.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+---
 
-### `yarn test`
+## Tech stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Layer | Technologies |
+| --- | --- |
+| **UI** | React 17, Material UI 5 (`@mui/material`, `@mui/icons-material`), Emotion |
+| **Charts** | Chart.js 3, react-chartjs-2 |
+| **Dates** | Day.js, MUI X Date Pickers (`@mui/x-date-pickers`) |
+| **State** | Zustand |
+| **i18n** | i18next, react-i18next |
+| **Tooling** | Create React App (`react-scripts` 5), `cross-env` (OpenSSL legacy for local Node) |
+| **Deploy** | `gh-pages` (manual) or **GitHub Actions** → `gh-pages` branch (see below) |
 
-### `yarn build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Project structure (high level)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+  api/freeGoldApi.js       # Fetch + cache JSON; filter by date range
+  components/              # AppNavbar, DatePicker (range form), GoldCharts, GoldSummaryCards, Spinner
+  i18n/                    # i18n init, locale constants
+  locales/                 # en.json, ar.json
+  provider/LanguageProvider.js   # Theme + RTL + Dayjs locale + I18nextProvider
+  store/useGoldStore.js    # Observations, range, loading, errors
+  theme/createAppTheme.js    # MUI theme (direction + fonts)
+  utils/                     # chartDataFromGold, goldKpis, exportGoldSeriesCsv
+public/
+  favicon.png, index.html, manifest.json
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `yarn eject`
+## Prerequisites
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- **Node.js** 18+ (20 LTS recommended)
+- **npm** (comes with Node)
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Getting started
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```bash
+git clone https://github.com/mamdouhramadan/BarChartReact.git
+cd BarChartReact
+npm install
+npm start
+```
 
-## Learn More
+Opens [http://localhost:3000](http://localhost:3000). No `.env` file is required for data (see `.env.example` for notes).
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Scripts
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Command | Description |
+| --- | --- |
+| `npm start` | Dev server with hot reload |
+| `npm run build` | Production build → `build/` |
+| `npm test` | CRA test runner |
+| `npm run deploy` | Build + push to `gh-pages` via `gh-pages` package (local deploy) |
 
-### Code Splitting
+`homepage` in `package.json` is set for GitHub Pages (`/BarChartReact/`), so asset paths resolve correctly when hosted under that path.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+## Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Automatic (recommended)
 
-### Making a Progressive Web App
+On every push to **`main`**, the workflow [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) builds the app and publishes the `build` folder to the **`gh-pages`** branch.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**Repository settings**
 
-### Advanced Configuration
+1. **Settings → Pages → Build and deployment**
+2. Source: **Deploy from a branch**
+3. Branch: **`gh-pages`** / **/(root)**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The site URL uses the `homepage` field in `package.json` (user/org pages + repo name).
 
-### Deployment
+### Manual
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+npm run deploy
+```
 
-### `yarn build` fails to minify
+Requires `git` credentials and uses the `gh-pages` package to push `build/` to `gh-pages`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## Data & limitations
+
+- Data is **not** a dedicated LBMA “fix” feed; it is a **merged** USD series from public sources (see [freegoldapi.com](https://freegoldapi.com/)).
+- Very long historical ranges may be **sparse** (e.g. annual points); recent ranges include **daily** updates where available.
+- First load downloads ~**160KB** JSON; results are **cached in memory** for the session and filtered by your selected dates.
+
+---
+
+## License
+
+This project is provided as-is for demonstration and personal use. Third-party data and libraries remain under their respective terms.
+
+---
+
+## Credits
+
+- [Free Gold API](https://freegoldapi.com/) — public JSON dataset  
+- [Create React App](https://create-react-app.dev/)  
+- [Material UI](https://mui.com/) · [Chart.js](https://www.chartjs.org/) · [i18next](https://www.i18next.com/)
