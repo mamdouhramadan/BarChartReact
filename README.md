@@ -101,8 +101,10 @@ On every push to **`main`**, [`.github/workflows/deploy-github-pages.yml`](.gith
 
 **One-time repository settings**
 
-1. **Settings → Pages → Build and deployment**
-2. **Source:** **GitHub Actions** (not “Deploy from a branch”).
+1. **Settings → General → Default branch** — set to **`main`** (required if the repo still used `master`).
+2. **Settings → Pages → Build and deployment** — **Source:** **GitHub Actions** (not “Deploy from a branch”).
+3. If an old **`master`** branch remains on GitHub, delete it after step 1: **Branches** → delete `master`, or locally:  
+   `git push origin --delete master`
 
 After the first successful workflow run, the live URL follows your `package.json` **`homepage`** (e.g. `https://<user>.github.io/BarChartReact/`).
 
