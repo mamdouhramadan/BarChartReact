@@ -1,5 +1,5 @@
-# Build and deploy the CRA app to the gh-pages branch for GitHub Pages hosting.
-# Repo settings → Pages → Source: branch "gh-pages" / (root).
+# Deploy static site from pushes to `main` only. Uses GitHub Pages “GitHub Actions” source
+# (no separate gh-pages branch). Settings → Pages → Build and deployment → Source: GitHub Actions.
 
 name: Deploy to GitHub Pages
 
@@ -9,14 +9,16 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,7 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -36,9 +38,18 @@ jobs:
         env:
           CI: true
 
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
-          force_orphan: true
+          path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

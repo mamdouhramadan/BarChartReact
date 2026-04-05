@@ -41,7 +41,7 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 | **State** | Zustand |
 | **i18n** | i18next, react-i18next |
 | **Tooling** | Create React App (`react-scripts` 5), `cross-env` (OpenSSL legacy for local Node) |
-| **Deploy** | `gh-pages` (manual) or **GitHub Actions** → `gh-pages` branch (see below) |
+| **Deploy** | **GitHub Actions** on `main` → GitHub Pages (artifact upload; no extra branch) |
 
 ---
 
@@ -88,7 +88,6 @@ Opens [http://localhost:3000](http://localhost:3000). No `.env` file is required
 | `npm start` | Dev server with hot reload |
 | `npm run build` | Production build → `build/` |
 | `npm test` | CRA test runner |
-| `npm run deploy` | Build + push to `gh-pages` via `gh-pages` package (local deploy) |
 
 `homepage` in `package.json` is set for GitHub Pages (`/BarChartReact/`), so asset paths resolve correctly when hosted under that path.
 
@@ -96,25 +95,20 @@ Opens [http://localhost:3000](http://localhost:3000). No `.env` file is required
 
 ## Deployment
 
-### Automatic (recommended)
+### GitHub Actions (recommended)
 
-On every push to **`main`**, the workflow [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) builds the app and publishes the `build` folder to the **`gh-pages`** branch.
+On every push to **`main`**, [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) runs `npm ci`, `npm run build`, uploads the `build/` folder with **`actions/upload-pages-artifact`**, and deploys with **`actions/deploy-pages`**. **No `gh-pages` branch** is used.
 
-**Repository settings**
+**One-time repository settings**
 
 1. **Settings → Pages → Build and deployment**
-2. Source: **Deploy from a branch**
-3. Branch: **`gh-pages`** / **/(root)**
+2. **Source:** **GitHub Actions** (not “Deploy from a branch”).
 
-The site URL uses the `homepage` field in `package.json` (user/org pages + repo name).
+After the first successful workflow run, the live URL follows your `package.json` **`homepage`** (e.g. `https://<user>.github.io/BarChartReact/`).
 
-### Manual
+### Manual static upload
 
-```bash
-npm run deploy
-```
-
-Requires `git` credentials and uses the `gh-pages` package to push `build/` to `gh-pages`.
+Run `npm run build` and host the `build/` folder on any static host (optional).
 
 ---
 
