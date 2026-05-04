@@ -43,7 +43,7 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 | **Dates** | Day.js, MUI X Date Pickers v8 (`@mui/x-date-pickers`) |
 | **State** | Zustand 5 |
 | **i18n** | i18next, react-i18next |
-| **Tooling** | **Vite** 7, Vitest; TypeScript project references (`tsconfig.app.json` / `tsconfig.node.json`) |
+| **Tooling** | **Vite** 6, Vitest 3; TypeScript project references (`tsconfig.app.json` / `tsconfig.node.json`) |
 | **Deploy** | **GitHub Actions** on `main` → GitHub Pages (artifact from **`dist/`**; no `gh-pages` branch) |
 
 ---
@@ -74,7 +74,7 @@ public/
 
 ## Prerequisites
 
-- **Node.js** **20.19+** or **22.12+** (required by Vite 7; **20 LTS** recommended)
+- **Node.js** **18.18+**, **20.x**, or **22+** (Vite 6; **20 LTS** recommended). Avoid **Node 21** if you can — it is not in Vite’s supported range and may show npm engine warnings.
 - **npm** (comes with Node)
 
 ---
@@ -88,7 +88,7 @@ npm install
 npm run dev
 ```
 
-Opens the Vite dev server (default [http://localhost:5173](http://localhost:5173)). No `.env` file is required for data (see `.env.example` for notes).
+Opens the Vite dev server at [http://localhost:5173/BarChartReact/](http://localhost:5173/BarChartReact/) (matches the `base` in `vite.config.ts`). No `.env` file is required for data (see `.env.example` for notes).
 
 ### Scripts
 
