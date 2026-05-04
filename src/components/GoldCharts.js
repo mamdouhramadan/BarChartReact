@@ -27,6 +27,8 @@ import {
 import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
 import useGoldStore from '../store/useGoldStore';
 import chartDataFromGold from '../utils/chartDataFromGold';
+import { entranceSx } from '../animation/entrance';
+import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 
 ChartJS.register(
   ArcElement,
@@ -51,12 +53,21 @@ function chartFontFamily(theme) {
   return theme.typography.fontFamily;
 }
 
-function PieSideLegend({ pieSeries, translate }) {
+function PieSideLegend({ pieSeries, translate, prefersReducedMotion }) {
   return (
     <Grid item xs={12} md={5}>
       <Stack spacing={1.25} sx={{ pt: { xs: 0, md: 1 }, maxHeight: { md: 360 }, overflowY: 'auto' }}>
         {pieSeries.map((slice, index) => (
-          <Box key={slice.id} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, minWidth: 0 }}>
+          <Box
+            key={slice.id}
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1.25,
+              minWidth: 0,
+              ...entranceSx(index, prefersReducedMotion, { tight: true, baseDelay: 0.06, delayStep: 0.05 })
+            }}
+          >
             <Box
               aria-hidden
               sx={{
@@ -126,6 +137,7 @@ function ChartCard({ title, subtitle, children, gradient, eyebrow }) {
 function GoldCharts() {
   const { t } = useTranslation();
   const theme = useTheme();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const observations = useGoldStore((state) => state.observations);
   const [activeTab, setActiveTab] = useState(0);
@@ -319,8 +331,12 @@ function GoldCharts() {
         sx={{ mb: 2, alignItems: { md: 'center' }, justifyContent: 'space-between' }}
       >
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-          <Chip label={t('chart.dataBadge')} variant="outlined" color="primary" />
-          <Chip label={t('chart.fixPrints', { count: chartData.dateLabels.length })} variant="outlined" />
+          <Box sx={entranceSx(0, prefersReducedMotion, { tight: true })}>
+            <Chip label={t('chart.dataBadge')} variant="outlined" color="primary" />
+          </Box>
+          <Box sx={entranceSx(1, prefersReducedMotion, { tight: true })}>
+            <Chip label={t('chart.fixPrints', { count: chartData.dateLabels.length })} variant="outlined" />
+          </Box>
         </Stack>
         <Typography variant="caption" color="text.secondary">
           {t('chart.tabsHint')}
@@ -403,7 +419,7 @@ function GoldCharts() {
                       <Pie data={pieChartData} options={pieOptions} />
                     </Box>
                   </Grid>
-                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} />
+                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} prefersReducedMotion={prefersReducedMotion} />
                 </Grid>
               ) : (
                 <Alert severity="info">{t('chart.pieNeedTwo')}</Alert>
@@ -429,7 +445,7 @@ function GoldCharts() {
                       <Doughnut data={pieChartData} options={doughnutOptions} />
                     </Box>
                   </Grid>
-                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} />
+                  <PieSideLegend pieSeries={chartData.pieSeries} translate={t} prefersReducedMotion={prefersReducedMotion} />
                 </Grid>
               ) : (
                 <Alert severity="info">{t('chart.pieNeedTwo')}</Alert>

@@ -21,6 +21,8 @@ import useGoldStore, { DEFAULT_GOLD_SERIES_ID } from './store/useGoldStore';
 import exportGoldSeriesCsv from './utils/exportGoldSeriesCsv';
 import goldKpis from './utils/goldKpis';
 import i18nApp from './i18n';
+import { entranceSx } from './animation/entrance';
+import usePrefersReducedMotion from './hooks/usePrefersReducedMotion';
 
 const DEFAULT_END_DATE = dayjs().subtract(1, 'day');
 const DEFAULT_START_DATE = DEFAULT_END_DATE.subtract(6, 'month').startOf('month');
@@ -35,6 +37,7 @@ function resolveUserMessage(t, message) {
 
 function App() {
   const { t, i18n } = useTranslation();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const observations = useGoldStore((state) => state.observations);
   const dateRange = useGoldStore((state) => state.dateRange);
   const seriesId = useGoldStore((state) => state.seriesId);
@@ -82,6 +85,14 @@ function App() {
   const showEmptyState = !isLoading && Boolean(dateRange.from && dateRange.to) && observations.length === 0 && !error;
   const kpis = useMemo(() => goldKpis({ observations, seriesId }), [observations, seriesId]);
   const seriesTitleLabel = kpis ? t(`series.${kpis.seriesId}`) : t('app.londonPmDefault');
+
+  const z = {
+    hero: 0,
+    range: error ? 2 : 1,
+    summary: error ? 3 : 2,
+    charts: error ? 4 : 3,
+    footer: error ? 5 : 4
+  };
 
   const handleStartChange = (value) => {
     setDateRange({
@@ -140,6 +151,7 @@ function App() {
 
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3 } }}>
         <Stack spacing={3.5}>
+          <Box sx={{ width: '100%', ...entranceSx(z.hero, prefersReducedMotion) }}>
           <Paper
             elevation={0}
             sx={{
@@ -183,10 +195,23 @@ function App() {
                   {t('app.heroBody')}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 2.5, flexWrap: 'wrap', gap: 1 }}>
-                  <Chip label={t('app.chipReact')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
-                  <Chip label={t('app.chipChartJs')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
-                  <Chip label={t('app.chipDataApi')} variant="filled" sx={{ bgcolor: 'rgba(251,191,36,0.2)', color: '#fffbeb' }} />
-                  <Chip label={t('app.chipCsv')} variant="filled" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' }} />
+                  {[
+                    { key: 'react', label: t('app.chipReact'), sx: { bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' } },
+                    { key: 'chart', label: t('app.chipChartJs'), sx: { bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' } },
+                    { key: 'api', label: t('app.chipDataApi'), sx: { bgcolor: 'rgba(251,191,36,0.2)', color: '#fffbeb' } },
+                    { key: 'csv', label: t('app.chipCsv'), sx: { bgcolor: 'rgba(255,255,255,0.1)', color: '#fffbeb' } }
+                  ].map((chip, chipIndex) => (
+                    <Box
+                      key={chip.key}
+                      sx={entranceSx(chipIndex, prefersReducedMotion, {
+                        tight: true,
+                        baseDelay: 0.38,
+                        delayStep: 0.05
+                      })}
+                    >
+                      <Chip label={chip.label} variant="filled" sx={chip.sx} />
+                    </Box>
+                  ))}
                 </Stack>
               </Grid>
               <Grid item xs={12} md={5}>
@@ -244,13 +269,17 @@ function App() {
               </Grid>
             </Grid>
           </Paper>
+          </Box>
 
           {error ? (
-            <Alert severity="warning" variant="outlined">
-              {resolveUserMessage(t, error)}
-            </Alert>
+            <Box sx={{ width: '100%', ...entranceSx(1, prefersReducedMotion) }}>
+              <Alert severity="warning" variant="outlined">
+                {resolveUserMessage(t, error)}
+              </Alert>
+            </Box>
           ) : null}
 
+          <Box sx={{ width: '100%', ...entranceSx(z.range, prefersReducedMotion) }}>
           <Paper
             elevation={0}
             sx={{
@@ -283,9 +312,13 @@ function App() {
               </Alert>
             ) : null}
           </Paper>
+          </Box>
 
-          <GoldSummaryCards kpis={kpis} />
+          <Box sx={{ width: '100%', ...entranceSx(z.summary, prefersReducedMotion) }}>
+            <GoldSummaryCards kpis={kpis} />
+          </Box>
 
+          <Box sx={{ width: '100%', ...entranceSx(z.charts, prefersReducedMotion) }}>
           <Paper
             elevation={0}
             sx={{
@@ -323,10 +356,13 @@ function App() {
             </Box>
             <GoldCharts />
           </Paper>
+          </Box>
 
-          <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-            {t('app.footer')}
-          </Typography>
+          <Box sx={{ textAlign: 'center', width: '100%', ...entranceSx(z.footer, prefersReducedMotion) }}>
+            <Typography variant="caption" color="text.secondary">
+              {t('app.footer')}
+            </Typography>
+          </Box>
         </Stack>
       </Container>
 

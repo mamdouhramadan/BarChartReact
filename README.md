@@ -28,6 +28,7 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 - **Charts**: Line, Bar, Pie, Donut with tabbed UI; CSV export of the active window.
 - **Internationalization**: `i18next` / `react-i18next`; locale persisted in `localStorage` (`gold-tracker-locale`); fallback follows browser language.
 - **Theming**: Material UI with dynamic **LTR/RTL** and **Almarai** for Arabic.
+- **Motion**: Staggered **entrance animations** (hero, form fields, summary cards, charts) implemented with **MUI Emotion `keyframes`** and a small helper — **no** GSAP, Framer Motion, or react-awesome-reveal (keeps the bundle small and avoids Create React App + React 17 ESM issues with those libraries). Respects **`prefers-reduced-motion`**.
 
 ---
 
@@ -36,6 +37,7 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 | Layer | Technologies |
 | --- | --- |
 | **UI** | React 17, Material UI 5 (`@mui/material`, `@mui/icons-material`), Emotion |
+| **Animation** | **CSS keyframes** via `@mui/material/styles` (`keyframes`) — see `src/animation/entrance.js` and `src/hooks/usePrefersReducedMotion.js` (not a separate npm animation package) |
 | **Charts** | Chart.js 3, react-chartjs-2 |
 | **Dates** | Day.js, MUI X Date Pickers (`@mui/x-date-pickers`) |
 | **State** | Zustand |
@@ -49,6 +51,8 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 
 ```
 src/
+  animation/entrance.js    # Shared fade-up keyframes + staggered entrance `sx` helper
+  hooks/usePrefersReducedMotion.js
   api/freeGoldApi.js       # Fetch + cache JSON; filter by date range
   components/              # AppNavbar, DatePicker (range form), GoldCharts, GoldSummaryCards, Spinner
   i18n/                    # i18n init, locale constants
