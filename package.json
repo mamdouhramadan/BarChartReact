@@ -27,7 +27,8 @@
     "start": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "browserslist": {
     "production": [

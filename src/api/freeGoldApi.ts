@@ -1,4 +1,5 @@
 import type { Observation } from '../types/gold';
+import { NETWORK_UNREACHABLE_CODE } from '../utils/isNetworkFailure';
 
 /**
  * Public gold dataset — no API key, CORS enabled.
@@ -8,6 +9,12 @@ export const FREE_GOLD_JSON_URL = 'https://freegoldapi.com/data/latest.json';
 
 let cachedRows: Observation[] | null = null;
 let loadPromise: Promise<Observation[]> | null = null;
+
+/** Clears the in-memory dataset cache so each test run starts from a cold fetch. */
+export function resetFreeGoldApiCache(): void {
+  cachedRows = null;
+  loadPromise = null;
+}
 
 function normalizeRow(row: { date?: unknown; price?: unknown }): Observation | null {
   const price = row.price;
@@ -25,7 +32,12 @@ export async function loadFreeGoldDataset(): Promise<Observation[]> {
   }
   if (!loadPromise) {
     loadPromise = (async () => {
-      const response = await fetch(FREE_GOLD_JSON_URL, { credentials: 'omit' });
+      let response: Response;
+      try {
+        response = await fetch(FREE_GOLD_JSON_URL, { credentials: 'omit' });
+      } catch {
+        throw new Error(NETWORK_UNREACHABLE_CODE);
+      }
       if (!response.ok) {
         throw new Error('errors.genericLoad');
       }

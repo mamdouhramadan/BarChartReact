@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -17,10 +17,12 @@ import GoldSummaryCards from './components/GoldSummaryCards';
 import Spinner from './components/Spinner';
 import HeroPanel from './components/HeroPanel';
 import DashboardLayout from './components/DashboardLayout';
+import NetworkBlockedPage from './components/NetworkBlockedPage';
 import useGoldStore, { DEFAULT_GOLD_SERIES_ID } from './store/useGoldStore';
 import exportGoldSeriesCsv from './utils/exportGoldSeriesCsv';
 import goldKpis from './utils/goldKpis';
 import i18nApp from './i18n';
+import { isNetworkFailure } from './utils/isNetworkFailure';
 import { entranceSx } from './animation/entrance';
 import usePrefersReducedMotion from './hooks/usePrefersReducedMotion';
 import type { SeriesId } from './types/gold';
@@ -45,10 +47,12 @@ export default function App() {
   const isLoading = useGoldStore((state) => state.isLoading);
   const error = useGoldStore((state) => state.error);
   const fetchObservations = useGoldStore((state) => state.fetchObservations);
+  const clearError = useGoldStore((state) => state.clearError);
   const setSeriesId = useGoldStore((state) => state.setSeriesId);
   const setDateRange = useGoldStore((state) => state.setDateRange);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [networkWall, setNetworkWall] = useState(false);
 
   useEffect(() => {
     document.title = t('app.title');
@@ -70,6 +74,10 @@ export default function App() {
           seriesId: DEFAULT_GOLD_SERIES_ID
         });
       } catch (initialError: unknown) {
+        if (isNetworkFailure(initialError)) {
+          setNetworkWall(true);
+          return;
+        }
         const msg = initialError instanceof Error ? initialError.message : '';
         setSnackbarMessage(
           resolveUserMessage((key) => i18nApp.t(key), msg || '') || i18nApp.t('app.initFailed')
@@ -80,6 +88,12 @@ export default function App() {
 
     void initializeDashboard();
   }, [fetchObservations]);
+
+  useEffect(() => {
+    const onOffline = () => setNetworkWall(true);
+    window.addEventListener('offline', onOffline);
+    return () => window.removeEventListener('offline', onOffline);
+  }, []);
 
   const startDate: Dayjs | null = dateRange.from ? dayjs(dateRange.from) : null;
   const endDate: Dayjs | null = dateRange.to ? dayjs(dateRange.to) : null;
@@ -137,11 +151,47 @@ export default function App() {
         seriesId
       });
     } catch (fetchError: unknown) {
+      if (isNetworkFailure(fetchError)) {
+        setNetworkWall(true);
+        return;
+      }
       const msg = fetchError instanceof Error ? fetchError.message : '';
       setSnackbarMessage(resolveUserMessage(t, msg || '') || t('app.loadFailed'));
       setSnackbarOpen(true);
     }
   };
+
+  const handleNetworkRetry = useCallback(async () => {
+    clearError();
+    setNetworkWall(false);
+    const from = dateRange.from || DEFAULT_START_DATE.format('YYYY-MM-DD');
+    const to = dateRange.to || DEFAULT_END_DATE.format('YYYY-MM-DD');
+    try {
+      await fetchObservations({
+        from,
+        to,
+        seriesId
+      });
+    } catch (retryError: unknown) {
+      if (isNetworkFailure(retryError)) {
+        setNetworkWall(true);
+        return;
+      }
+      const msg = retryError instanceof Error ? retryError.message : '';
+      setSnackbarMessage(resolveUserMessage(t, msg || '') || t('app.loadFailed'));
+      setSnackbarOpen(true);
+    }
+  }, [clearError, dateRange.from, dateRange.to, fetchObservations, seriesId, t]);
+
+  if (networkWall) {
+    return (
+      <DashboardLayout>
+        <AppNavbar />
+        <NetworkBlockedPage onRetry={() => void handleNetworkRetry()} retrying={isLoading} />
+        <Spinner open={isLoading} />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

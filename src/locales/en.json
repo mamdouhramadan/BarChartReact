@@ -35,7 +35,17 @@
     "htmlInsteadOfJson": "Received HTML instead of JSON. Check your network or try again later.",
     "invalidJson": "The server returned data that is not valid JSON.",
     "genericLoad": "Unable to load gold price data.",
-    "fredApiError": "Could not load data for this date range."
+    "fredApiError": "Could not load data for this date range.",
+    "networkUnreachable": "Could not reach the data server. Your network may be blocking this site or the connection dropped."
+  },
+  "networkIssue": {
+    "title": "Network or access issue",
+    "body": "This app could not load data from the internet. That often means a corporate firewall, proxy, or filter is blocking the request, or your device is offline.",
+    "bulletFirewall": "Ask your network or security team whether outbound HTTPS to the data host is allowed.",
+    "bulletVpn": "If you use VPN or split tunneling, try another network or disconnect VPN to test.",
+    "bulletIt": "Share this screen with IT: they can verify DNS, TLS inspection, and allow‑list rules for external APIs.",
+    "retry": "Try again",
+    "retrying": "Retrying…"
   },
   "summary": {
     "title": "Bullion signal",

@@ -14,6 +14,7 @@ export interface GoldStore {
   error: string;
   setSeriesId: (seriesId: SeriesId) => void;
   setDateRange: (dateRange: DateRange) => void;
+  clearError: () => void;
   fetchObservations: (args: { from: string; to: string; seriesId?: SeriesId }) => Promise<Observation[]>;
 }
 
@@ -28,6 +29,9 @@ const useGoldStore = create<GoldStore>()((set, get) => ({
   },
   setDateRange(dateRange) {
     set({ dateRange });
+  },
+  clearError() {
+    set({ error: '' });
   },
   async fetchObservations({ from, to, seriesId }) {
     const id = seriesId ?? get().seriesId;
