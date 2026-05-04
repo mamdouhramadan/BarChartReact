@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -12,6 +13,8 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import type { ChartData, ChartOptions } from 'chart.js';
+import type { Theme } from '@mui/material/styles';
 import {
   ArcElement,
   BarElement,
@@ -27,6 +30,7 @@ import {
 import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
 import useGoldStore from '../store/useGoldStore';
 import chartDataFromGold from '../utils/chartDataFromGold';
+import type { PieSlice } from '../utils/chartDataFromGold';
 import { entranceSx } from '../animation/entrance';
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 
@@ -46,16 +50,24 @@ const PIE_DEFAULT_COLORS = ['#b8860b', '#64748b', '#0f766e', '#c2410c', '#1e3a5f
 
 const baseAnimation = {
   duration: 1100,
-  easing: 'easeOutQuart'
+  easing: 'easeOutQuart' as const
 };
 
-function chartFontFamily(theme) {
-  return theme.typography.fontFamily;
+function chartFontFamily(theme: Theme): string {
+  return String(theme.typography.fontFamily);
 }
 
-function PieSideLegend({ pieSeries, translate, prefersReducedMotion }) {
+function PieSideLegend({
+  pieSeries,
+  translate,
+  prefersReducedMotion
+}: {
+  pieSeries: PieSlice[];
+  translate: TFunction;
+  prefersReducedMotion: boolean;
+}) {
   return (
-    <Grid item xs={12} md={5}>
+    <Grid size={{ xs: 12, md: 5 }}>
       <Stack spacing={1.25} sx={{ pt: { xs: 0, md: 1 }, maxHeight: { md: 360 }, overflowY: 'auto' }}>
         {pieSeries.map((slice, index) => (
           <Box
@@ -94,7 +106,15 @@ function PieSideLegend({ pieSeries, translate, prefersReducedMotion }) {
   );
 }
 
-function ChartCard({ title, subtitle, children, gradient, eyebrow }) {
+interface ChartCardProps {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+  gradient: string;
+  eyebrow?: string;
+}
+
+function ChartCard({ title, subtitle, children, gradient, eyebrow }: ChartCardProps) {
   return (
     <Paper
       variant="outlined"
@@ -134,7 +154,7 @@ function ChartCard({ title, subtitle, children, gradient, eyebrow }) {
   );
 }
 
-function GoldCharts() {
+export default function GoldCharts() {
   const { t } = useTranslation();
   const theme = useTheme();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -145,11 +165,11 @@ function GoldCharts() {
   const lineWidth = Math.max(isSmallScreen ? 640 : 860, chartData.dateLabels.length * 28);
   const radialSize = isSmallScreen ? 320 : 380;
 
-  const lineChartData = useMemo(() => {
+  const lineChartData: ChartData<'line'> | null = useMemo(() => {
     if (!chartData.hasData || !chartData.lineSeries[0]) {
       return null;
     }
-    const s = chartData.lineSeries[0];
+    const s = chartData.lineSeries[0]!;
     return {
       labels: chartData.dateLabels,
       datasets: [
@@ -168,7 +188,7 @@ function GoldCharts() {
     };
   }, [chartData, t]);
 
-  const lineOptions = useMemo(
+  const lineOptions: ChartOptions<'line'> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -214,18 +234,18 @@ function GoldCharts() {
     [theme]
   );
 
-  const barChartData = useMemo(() => {
+  const barChartData: ChartData<'bar'> | null = useMemo(() => {
     if (!chartData.hasBarData || !chartData.barSeries[0]) {
       return null;
     }
-    const s = chartData.barSeries[0];
+    const s = chartData.barSeries[0]!;
     return {
       labels: chartData.barLabels.map((key) => t(`chart.${key}`)),
       datasets: [
         {
           label: t(`chart.${s.labelKey}`),
           data: s.data,
-          backgroundColor: [theme.palette.primary.main, theme.palette.primary.dark || '#1e3a5f'],
+          backgroundColor: [theme.palette.primary.main, theme.palette.primary.dark ?? '#1e3a5f'],
           borderRadius: 10,
           borderSkipped: false
         }
@@ -233,11 +253,11 @@ function GoldCharts() {
     };
   }, [chartData, t, theme.palette.primary.dark, theme.palette.primary.main]);
 
-  const barOptions = useMemo(
+  const barOptions: ChartOptions<'bar'> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
-      animation: { ...baseAnimation, delay: (ctx) => (ctx.type === 'data' ? ctx.dataIndex * 120 : 0) },
+      animation: baseAnimation,
       plugins: {
         legend: {
           position: 'bottom',
@@ -246,7 +266,7 @@ function GoldCharts() {
         tooltip: {
           backgroundColor: 'rgba(15, 23, 42, 0.92)',
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: $${Number(ctx.raw).toLocaleString()}`
+            label: (ctx) => `${ctx.dataset.label ?? ''}: $${Number(ctx.raw).toLocaleString()}`
           }
         }
       },
@@ -267,7 +287,7 @@ function GoldCharts() {
     [theme]
   );
 
-  const pieChartData = useMemo(() => {
+  const pieChartData: ChartData<'pie'> | null = useMemo(() => {
     if (!chartData.hasPieData) {
       return null;
     }
@@ -285,7 +305,7 @@ function GoldCharts() {
     };
   }, [chartData, t]);
 
-  const pieOptions = useMemo(
+  const pieOptions: ChartOptions<'pie'> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -307,12 +327,27 @@ function GoldCharts() {
     [theme]
   );
 
-  const doughnutOptions = useMemo(
+  const doughnutOptions: ChartOptions<'doughnut'> = useMemo(
     () => ({
-      ...pieOptions,
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        ...baseAnimation,
+        animateRotate: true,
+        animateScale: true
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+          bodyFont: { family: chartFontFamily(theme) },
+          padding: 12,
+          cornerRadius: 8
+        }
+      },
       cutout: '58%'
     }),
-    [pieOptions]
+    [theme]
   );
 
   if (!chartData.hasData) {
@@ -414,7 +449,7 @@ function GoldCharts() {
             >
               {chartData.hasPieData && pieChartData ? (
                 <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Grid size={{ xs: 12, md: 7 }} sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Box sx={{ width: radialSize, height: 390, position: 'relative' }}>
                       <Pie data={pieChartData} options={pieOptions} />
                     </Box>
@@ -440,9 +475,9 @@ function GoldCharts() {
             >
               {chartData.hasPieData && pieChartData ? (
                 <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Grid size={{ xs: 12, md: 7 }} sx={{ display: 'flex', justifyContent: 'center' }}>
                     <Box sx={{ width: radialSize, height: 390, position: 'relative' }}>
-                      <Doughnut data={pieChartData} options={doughnutOptions} />
+                      <Doughnut data={pieChartData as ChartData<'doughnut'>} options={doughnutOptions} />
                     </Box>
                   </Grid>
                   <PieSideLegend pieSeries={chartData.pieSeries} translate={t} prefersReducedMotion={prefersReducedMotion} />
@@ -461,5 +496,3 @@ function GoldCharts() {
     </Box>
   );
 }
-
-export default GoldCharts;

@@ -1,7 +1,17 @@
-const escapeCsvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+import type { DateRange, Observation, SeriesId } from '../types/gold';
 
-const exportGoldSeriesCsv = ({ observations = [], seriesId = '', dateRange = { from: '', to: '' } }) => {
-  const lines = [
+const escapeCsvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+export default function exportGoldSeriesCsv({
+  observations = [],
+  seriesId = '',
+  dateRange = { from: '', to: '' }
+}: {
+  observations?: Observation[];
+  seriesId?: SeriesId;
+  dateRange?: DateRange;
+}): void {
+  const lines: (string | number)[][] = [
     ['date', 'price_usd_per_troy_ounce', 'series_id', 'range_from', 'range_to'],
     ...observations.map((row) => [row.date, row.value, seriesId, dateRange.from, dateRange.to])
   ];
@@ -17,6 +27,4 @@ const exportGoldSeriesCsv = ({ observations = [], seriesId = '', dateRange = { f
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
-};
-
-export default exportGoldSeriesCsv;
+}

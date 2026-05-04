@@ -1,13 +1,15 @@
+import type { Observation } from '../types/gold';
+
 /**
  * Public gold dataset — no API key, CORS enabled.
  * @see https://freegoldapi.com/data/latest.json
  */
 export const FREE_GOLD_JSON_URL = 'https://freegoldapi.com/data/latest.json';
 
-let cachedRows = null;
-let loadPromise = null;
+let cachedRows: Observation[] | null = null;
+let loadPromise: Promise<Observation[]> | null = null;
 
-function normalizeRow(row) {
+function normalizeRow(row: { date?: unknown; price?: unknown }): Observation | null {
   const price = row.price;
   const value = typeof price === 'number' ? price : Number(price);
   if (row.date == null || Number.isNaN(value)) {
@@ -16,10 +18,8 @@ function normalizeRow(row) {
   return { date: String(row.date).slice(0, 10), value };
 }
 
-/**
- * Fetches once per session; returns sorted { date, value }[] (ISO dates YYYY-MM-DD).
- */
-export async function loadFreeGoldDataset() {
+/** Fetches once per session; returns sorted { date, value }[] (ISO dates YYYY-MM-DD). */
+export async function loadFreeGoldDataset(): Promise<Observation[]> {
   if (cachedRows) {
     return cachedRows;
   }
@@ -34,9 +34,9 @@ export async function loadFreeGoldDataset() {
       if (trimmed.startsWith('<')) {
         throw new Error('errors.htmlInsteadOfJson');
       }
-      let payload;
+      let payload: unknown;
       try {
-        payload = JSON.parse(trimmed);
+        payload = JSON.parse(trimmed) as unknown;
       } catch {
         throw new Error('errors.invalidJson');
       }
@@ -44,8 +44,8 @@ export async function loadFreeGoldDataset() {
         throw new Error('errors.invalidJson');
       }
       const rows = payload
-        .map(normalizeRow)
-        .filter(Boolean)
+        .map((r) => normalizeRow(r as { date?: unknown; price?: unknown }))
+        .filter((r): r is Observation => r !== null)
         .sort((a, b) => a.date.localeCompare(b.date));
       cachedRows = rows;
       return rows;
@@ -56,7 +56,7 @@ export async function loadFreeGoldDataset() {
   return loadPromise;
 }
 
-export function filterObservationsByRange(observations, from, to) {
+export function filterObservationsByRange(observations: Observation[], from: string, to: string): Observation[] {
   if (!from || !to) {
     return [];
   }

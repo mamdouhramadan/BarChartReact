@@ -1,15 +1,50 @@
+import type { Observation } from '../types/gold';
+
 const EPS = 1e-6;
 
-/**
- * Build chart datasets from sorted gold observations (date + USD price).
- * Pie/donut: counts trading days by sign of day-over-day change (not a portfolio allocation).
- */
-const chartDataFromGold = (observations = []) => {
+export interface LineSeriesItem {
+  id: string;
+  data: number[];
+  labelKey: string;
+  showMark: boolean;
+}
+
+export interface BarSeriesItem {
+  data: number[];
+  labelKey: string;
+}
+
+export interface PieSlice {
+  id: number;
+  labelKey: string;
+  value: number;
+}
+
+export interface ReturnBucket {
+  key: string;
+  labelKey: string;
+  count: number;
+}
+
+export interface ChartDerivedData {
+  hasData: boolean;
+  hasBarData: boolean;
+  hasPieData: boolean;
+  dateLabels: string[];
+  lineSeries: LineSeriesItem[];
+  barLabels: string[];
+  barSeries: BarSeriesItem[];
+  pieSeries: PieSlice[];
+  returnBuckets: ReturnBucket[];
+}
+
+/** Build chart datasets from sorted gold observations (date + USD price). */
+function chartDataFromGold(observations: Observation[] = []): ChartDerivedData {
   const sorted = [...observations].sort((a, b) => a.date.localeCompare(b.date));
   const dateLabels = sorted.map((row) => row.date);
   const prices = sorted.map((row) => row.value);
 
-  const lineSeries = [
+  const lineSeries: LineSeriesItem[] = [
     {
       id: 'gold',
       data: prices,
@@ -18,11 +53,11 @@ const chartDataFromGold = (observations = []) => {
     }
   ];
 
-  let barLabels = [];
-  let barSeries = [];
+  let barLabels: string[] = [];
+  let barSeries: BarSeriesItem[] = [];
   if (sorted.length >= 1) {
-    const firstPrice = sorted[0].value;
-    const lastPrice = sorted[sorted.length - 1].value;
+    const firstPrice = sorted[0]!.value;
+    const lastPrice = sorted[sorted.length - 1]!.value;
     barLabels = ['periodStart', 'periodEnd'];
     barSeries = [
       {
@@ -32,8 +67,8 @@ const chartDataFromGold = (observations = []) => {
     ];
   }
 
-  let pieSeries = [];
-  let returnBuckets = [];
+  let pieSeries: PieSlice[] = [];
+  let returnBuckets: ReturnBucket[] = [];
 
   if (sorted.length >= 2) {
     let up = 0;
@@ -41,7 +76,7 @@ const chartDataFromGold = (observations = []) => {
     let flat = 0;
 
     for (let index = 1; index < sorted.length; index += 1) {
-      const delta = sorted[index].value - sorted[index - 1].value;
+      const delta = sorted[index]!.value - sorted[index - 1]!.value;
       if (delta > EPS) {
         up += 1;
       } else if (delta < -EPS) {
@@ -75,6 +110,6 @@ const chartDataFromGold = (observations = []) => {
     pieSeries,
     returnBuckets
   };
-};
+}
 
 export default chartDataFromGold;

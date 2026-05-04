@@ -1,6 +1,7 @@
 import { createTheme } from '@mui/material/styles';
+import type { SupportedLocale } from '../i18n/constants';
 
-export function createAppTheme(direction = 'ltr', lang = 'en') {
+export function createAppTheme(direction: 'ltr' | 'rtl' = 'ltr', lang: SupportedLocale | string = 'en') {
   const isArabic = lang === 'ar';
   const bodySans = isArabic
     ? '"Almarai", "IBM Plex Sans", system-ui, sans-serif'

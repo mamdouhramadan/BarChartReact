@@ -1,5 +1,7 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ComponentType, FormEvent } from 'react';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import type { Dayjs } from 'dayjs';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -16,10 +18,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { GOLD_SERIES_OPTIONS } from '../store/useGoldStore';
 import { entranceSx } from '../animation/entrance';
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
+import type { SeriesId } from '../types/gold';
 
-const dateSlotProps = (Icon) => ({
+const dateSlotProps = (Icon: ComponentType<SvgIconProps>) => ({
   textField: {
-    size: 'medium',
+    size: 'medium' as const,
     fullWidth: true,
     InputProps: {
       startAdornment: (
@@ -31,10 +34,34 @@ const dateSlotProps = (Icon) => ({
   }
 });
 
-function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSeriesChange, onStartChange, onSubmit, selectedSeries, startDate }) {
+type GoldSeriesOption = (typeof GOLD_SERIES_OPTIONS)[number];
+
+export interface GoldRangeFormProps {
+  btnDisabled: boolean;
+  disabledEnd: boolean;
+  endDate: Dayjs | null;
+  onEndChange: (value: Dayjs | null) => void;
+  onSeriesChange: (id: SeriesId) => void;
+  onStartChange: (value: Dayjs | null) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  selectedSeries: SeriesId;
+  startDate: Dayjs | null;
+}
+
+export default function GoldRangeForm({
+  btnDisabled,
+  disabledEnd,
+  endDate,
+  onEndChange,
+  onSeriesChange,
+  onStartChange,
+  onSubmit,
+  selectedSeries,
+  startDate
+}: GoldRangeFormProps) {
   const { t } = useTranslation();
   const prefersReducedMotion = usePrefersReducedMotion();
-  const seriesValue = GOLD_SERIES_OPTIONS.find((option) => option.id === selectedSeries) || GOLD_SERIES_OPTIONS[0];
+  const seriesValue: GoldSeriesOption = GOLD_SERIES_OPTIONS.find((option) => option.id === selectedSeries) ?? GOLD_SERIES_OPTIONS[0]!;
   const seriesLabel = t(`series.${seriesValue.id}`);
 
   return (
@@ -56,7 +83,7 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
               {t('form.dateWindow')}
             </Typography>
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-              <Grid item xs={12} sm={6} md={4} sx={entranceSx(0, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={entranceSx(0, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
                 <DatePicker
                   label={t('form.startDate')}
                   value={startDate}
@@ -66,13 +93,13 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
                   slotProps={dateSlotProps(CalendarMonthOutlined)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4} sx={entranceSx(1, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={entranceSx(1, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
                 <DatePicker
                   label={t('form.endDate')}
                   value={endDate}
                   onChange={onEndChange}
                   disabled={disabledEnd}
-                  minDate={startDate || undefined}
+                  minDate={startDate ?? undefined}
                   disableFuture
                   format="DD MMM YYYY"
                   slotProps={dateSlotProps(CalendarMonthOutlined)}
@@ -88,9 +115,9 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
               {t('form.seriesSection')}
             </Typography>
             <Grid container spacing={2} sx={{ mt: 0.5 }} alignItems="stretch">
-              <Grid item xs={12} md={5} sx={entranceSx(0, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
-                <Autocomplete
-                  options={GOLD_SERIES_OPTIONS}
+              <Grid size={{ xs: 12, md: 5 }} sx={entranceSx(0, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
+                <Autocomplete<GoldSeriesOption, false, false, false>
+                  options={[...GOLD_SERIES_OPTIONS]}
                   value={seriesValue}
                   onChange={(_, next) => {
                     if (next) {
@@ -119,7 +146,7 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
                   )}
                 />
               </Grid>
-              <Grid item xs={12} md={4} sx={entranceSx(1, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
+              <Grid size={{ xs: 12, md: 4 }} sx={entranceSx(1, prefersReducedMotion, { tight: true, baseDelay: 0.08 })}>
                 <TextField
                   size="medium"
                   label={t('form.activeSeries')}
@@ -135,7 +162,10 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} md={3} sx={{ display: 'flex', ...entranceSx(2, prefersReducedMotion, { tight: true, baseDelay: 0.08 }) }}>
+              <Grid
+                size={{ xs: 12, md: 3 }}
+                sx={{ display: 'flex', ...entranceSx(2, prefersReducedMotion, { tight: true, baseDelay: 0.08 }) }}
+              >
                 <Button
                   type="submit"
                   variant="contained"
@@ -154,5 +184,3 @@ function GoldRangeForm({ btnDisabled, disabledEnd, endDate, onEndChange, onSerie
     </Stack>
   );
 }
-
-export default GoldRangeForm;

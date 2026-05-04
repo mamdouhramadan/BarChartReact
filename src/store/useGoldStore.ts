@@ -1,14 +1,23 @@
 import { create } from 'zustand';
 import { filterObservationsByRange, loadFreeGoldDataset } from '../api/freeGoldApi';
+import type { DateRange, Observation, SeriesId } from '../types/gold';
 
-/**
- * Single public series (Free Gold API — USD normalized blend, no API key).
- */
-export const GOLD_SERIES_OPTIONS = [{ id: 'FREE_GOLD_USD', label: 'Gold USD (Free Gold API)' }];
+export const GOLD_SERIES_OPTIONS = [{ id: 'FREE_GOLD_USD', label: 'Gold USD (Free Gold API)' }] as const;
 
-export const DEFAULT_GOLD_SERIES_ID = GOLD_SERIES_OPTIONS[0].id;
+export const DEFAULT_GOLD_SERIES_ID: SeriesId = GOLD_SERIES_OPTIONS[0].id;
 
-const useGoldStore = create((set, get) => ({
+export interface GoldStore {
+  observations: Observation[];
+  dateRange: DateRange;
+  seriesId: SeriesId;
+  isLoading: boolean;
+  error: string;
+  setSeriesId: (seriesId: SeriesId) => void;
+  setDateRange: (dateRange: DateRange) => void;
+  fetchObservations: (args: { from: string; to: string; seriesId?: SeriesId }) => Promise<Observation[]>;
+}
+
+const useGoldStore = create<GoldStore>()((set, get) => ({
   observations: [],
   dateRange: { from: '', to: '' },
   seriesId: DEFAULT_GOLD_SERIES_ID,
@@ -21,7 +30,7 @@ const useGoldStore = create((set, get) => ({
     set({ dateRange });
   },
   async fetchObservations({ from, to, seriesId }) {
-    const id = seriesId || get().seriesId;
+    const id = seriesId ?? get().seriesId;
 
     set({
       isLoading: true,
@@ -40,10 +49,12 @@ const useGoldStore = create((set, get) => ({
       });
 
       return observations;
-    } catch (error) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message || 'errors.genericLoad' : 'errors.genericLoad';
       set({
         observations: [],
-        error: error.message || 'errors.genericLoad'
+        error: message
       });
       throw error;
     } finally {

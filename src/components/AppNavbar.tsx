@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -17,16 +17,16 @@ import { normalizeLocale } from '../i18n/constants';
 import { entranceSx } from '../animation/entrance';
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 
-const logoSrc = `${process.env.PUBLIC_URL || ''}/favicon.png`;
+const logoSrc = `${import.meta.env.BASE_URL}favicon.png`;
 
-function AppNavbar() {
+export default function AppNavbar() {
   const { t, i18n } = useTranslation();
   const prefersReducedMotion = usePrefersReducedMotion();
   const currentLang = normalizeLocale(i18n.language);
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleOpen = (event) => {
+  const handleOpen = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -34,8 +34,8 @@ function AppNavbar() {
     setAnchorEl(null);
   };
 
-  const pickLanguage = (code) => {
-    i18n.changeLanguage(code);
+  const pickLanguage = (code: 'en' | 'ar') => {
+    void i18n.changeLanguage(code);
     handleClose();
   };
 
@@ -127,37 +127,30 @@ function AppNavbar() {
             onClose={handleClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{
-              elevation: 8,
-              sx: {
-                // mt: 1,
-                minWidth: 220,
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                overflow: 'visible'
+            slotProps={{
+              paper: {
+                elevation: 8,
+                sx: {
+                  minWidth: 220,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  overflow: 'visible'
+                }
+              },
+              list: {
+                dense: true,
+                sx: { py: 1 }
               }
             }}
-            MenuListProps={{
-              dense: true,
-              sx: { py: 1 }
-            }}
           >
-            <MenuItem
-              onClick={() => pickLanguage('en')}
-              selected={currentLang === 'en'}
-              sx={{ gap: 1, py: 1.25 }}
-            >
+            <MenuItem onClick={() => pickLanguage('en')} selected={currentLang === 'en'} sx={{ gap: 1, py: 1.25 }}>
               <ListItemIcon sx={{ minWidth: 36 }}>
                 {currentLang === 'en' ? <Check fontSize="small" color="primary" /> : <Box sx={{ width: 18 }} />}
               </ListItemIcon>
               {t('language.en')}
             </MenuItem>
-            <MenuItem
-              onClick={() => pickLanguage('ar')}
-              selected={currentLang === 'ar'}
-              sx={{ gap: 1, py: 1.25 }}
-            >
+            <MenuItem onClick={() => pickLanguage('ar')} selected={currentLang === 'ar'} sx={{ gap: 1, py: 1.25 }}>
               <ListItemIcon sx={{ minWidth: 36 }}>
                 {currentLang === 'ar' ? <Check fontSize="small" color="primary" /> : <Box sx={{ width: 18 }} />}
               </ListItemIcon>
@@ -169,5 +162,3 @@ function AppNavbar() {
     </AppBar>
   );
 }
-
-export default AppNavbar;

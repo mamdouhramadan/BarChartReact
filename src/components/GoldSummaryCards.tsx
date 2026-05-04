@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -6,10 +6,20 @@ import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { entranceSx } from '../animation/entrance';
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
+import type { Kpis } from '../utils/goldKpis';
 
-function SummaryCard({ eyebrow, value, helperText, accent, displayFont }) {
+interface SummaryCardProps {
+  eyebrow: string;
+  value: string | number;
+  helperText: string;
+  accent: string;
+  displayFont: string | string[] | undefined;
+}
+
+function SummaryCard({ eyebrow, value, helperText, accent, displayFont }: SummaryCardProps) {
   return (
     <Paper
       variant="outlined"
@@ -56,13 +66,17 @@ function SummaryCard({ eyebrow, value, helperText, accent, displayFont }) {
   );
 }
 
-function GoldSummaryCards({ kpis }) {
+export interface GoldSummaryCardsProps {
+  kpis: Kpis | null;
+}
+
+export default function GoldSummaryCards({ kpis }: GoldSummaryCardsProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const prefersReducedMotion = usePrefersReducedMotion();
   const displayFont = theme.typography.h3.fontFamily;
 
-  const headerMotion = useMemo(
+  const headerMotion: { title: SxProps<Theme>; chip: SxProps<Theme> } = useMemo(
     () => ({
       title: entranceSx(0, prefersReducedMotion, { tight: true }),
       chip: entranceSx(1, prefersReducedMotion, { tight: true })
@@ -74,8 +88,7 @@ function GoldSummaryCards({ kpis }) {
     return null;
   }
 
-  const changeTone =
-    kpis.changePct >= 0 ? t('summary.bullishDrift') : t('summary.bearishDrift');
+  const changeTone = kpis.changePct >= 0 ? t('summary.bullishDrift') : t('summary.bearishDrift');
   const trendLabel = kpis.changePct >= 0 ? `+${kpis.changePct}%` : `${kpis.changePct}%`;
   const trendColor = kpis.changePct >= 0 ? 'success' : 'warning';
   const seriesTitle = t(`series.${kpis.seriesId}`);
@@ -166,5 +179,3 @@ function GoldSummaryCards({ kpis }) {
     </Stack>
   );
 }
-
-export default GoldSummaryCards;

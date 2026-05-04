@@ -1,4 +1,5 @@
 import { keyframes } from '@mui/material/styles';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 const easeOut = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -24,19 +25,20 @@ export const fadeUpTight = keyframes`
   }
 `;
 
-/**
- * CSS-only entrance (no extra animation libs). Works with CRA + React 17.
- * @param {number} index — order in the cascade (0-based)
- * @param {boolean} prefersReducedMotion
- * @param {{ delayStep?: number, baseDelay?: number, duration?: number, tight?: boolean }} [opts]
- */
-export function entranceSx(index, prefersReducedMotion, opts = {}) {
-  const {
-    delayStep = 0.07,
-    baseDelay = 0.04,
-    duration = 0.4,
-    tight = false
-  } = opts;
+export interface EntranceOpts {
+  delayStep?: number;
+  baseDelay?: number;
+  duration?: number;
+  tight?: boolean;
+}
+
+/** CSS-only entrance (no extra animation libs). */
+export function entranceSx(
+  index: number,
+  prefersReducedMotion: boolean,
+  opts: EntranceOpts = {}
+): SxProps<Theme> {
+  const { delayStep = 0.07, baseDelay = 0.04, duration = 0.4, tight = false } = opts;
   if (prefersReducedMotion) {
     return {};
   }

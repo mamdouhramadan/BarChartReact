@@ -28,7 +28,7 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 - **Charts**: Line, Bar, Pie, Donut with tabbed UI; CSV export of the active window.
 - **Internationalization**: `i18next` / `react-i18next`; locale persisted in `localStorage` (`gold-tracker-locale`); fallback follows browser language.
 - **Theming**: Material UI with dynamic **LTR/RTL** and **Almarai** for Arabic.
-- **Motion**: Staggered **entrance animations** (hero, form fields, summary cards, charts) implemented with **MUI Emotion `keyframes`** and a small helper — **no** GSAP, Framer Motion, or react-awesome-reveal (keeps the bundle small and avoids Create React App + React 17 ESM issues with those libraries). Respects **`prefers-reduced-motion`**.
+- **Motion**: Staggered **entrance animations** (hero, form fields, summary cards, charts) implemented with **MUI Emotion `keyframes`** and a small helper — **no** separate animation runtime library. Respects **`prefers-reduced-motion`**.
 
 ---
 
@@ -36,40 +36,45 @@ Pie and donut charts summarize **day-over-day direction** (up / down / flat coun
 
 | Layer | Technologies |
 | --- | --- |
-| **UI** | React 17, Material UI 5 (`@mui/material`, `@mui/icons-material`), Emotion |
-| **Animation** | **CSS keyframes** via `@mui/material/styles` (`keyframes`) — see `src/animation/entrance.js` and `src/hooks/usePrefersReducedMotion.js` (not a separate npm animation package) |
-| **Charts** | Chart.js 3, react-chartjs-2 |
-| **Dates** | Day.js, MUI X Date Pickers (`@mui/x-date-pickers`) |
-| **State** | Zustand |
+| **Language** | **TypeScript** (strict) |
+| **UI** | React 19, Material UI 7 (`@mui/material`, `@mui/icons-material`), Emotion |
+| **Animation** | **CSS keyframes** via `@mui/material/styles` — see `src/animation/entrance.ts` and `src/hooks/usePrefersReducedMotion.ts` |
+| **Charts** | Chart.js 4, react-chartjs-2 v5 |
+| **Dates** | Day.js, MUI X Date Pickers v8 (`@mui/x-date-pickers`) |
+| **State** | Zustand 5 |
 | **i18n** | i18next, react-i18next |
-| **Tooling** | Create React App (`react-scripts` 5), `cross-env` (OpenSSL legacy for local Node) |
-| **Deploy** | **GitHub Actions** on `main` → GitHub Pages (artifact upload; no extra branch) |
+| **Tooling** | **Vite** 7, Vitest; TypeScript project references (`tsconfig.app.json` / `tsconfig.node.json`) |
+| **Deploy** | **GitHub Actions** on `main` → GitHub Pages (artifact from **`dist/`**; no `gh-pages` branch) |
 
 ---
 
 ## Project structure (high level)
 
 ```
+index.html                 # Vite entry (root)
 src/
-  animation/entrance.js    # Shared fade-up keyframes + staggered entrance `sx` helper
-  hooks/usePrefersReducedMotion.js
-  api/freeGoldApi.js       # Fetch + cache JSON; filter by date range
-  components/              # AppNavbar, DatePicker (range form), GoldCharts, GoldSummaryCards, Spinner
-  i18n/                    # i18n init, locale constants
-  locales/                 # en.json, ar.json
-  provider/LanguageProvider.js   # Theme + RTL + Dayjs locale + I18nextProvider
-  store/useGoldStore.js    # Observations, range, loading, errors
-  theme/createAppTheme.js    # MUI theme (direction + fonts)
-  utils/                     # chartDataFromGold, goldKpis, exportGoldSeriesCsv
+  main.tsx                 # createRoot + providers
+  App.tsx                  # Dashboard sections + data flow
+  types/gold.ts            # Observation, DateRange, SeriesId
+  animation/entrance.ts
+  hooks/usePrefersReducedMotion.ts
+  api/freeGoldApi.ts
+  components/                # AppNavbar, HeroPanel, DashboardLayout, GoldRangeForm, GoldCharts, GoldSummaryCards, Spinner
+  i18n/                      # index.ts, constants.ts, i18next.d.ts
+  locales/                   # en.json, ar.json
+  providers/LanguageProvider.tsx
+  store/useGoldStore.ts
+  theme/createAppTheme.ts
+  utils/
 public/
-  favicon.png, index.html, manifest.json
+  favicon.png, manifest.json
 ```
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 18+ (20 LTS recommended)
+- **Node.js** **20.19+** or **22.12+** (required by Vite 7; **20 LTS** recommended)
 - **npm** (comes with Node)
 
 ---
@@ -80,20 +85,21 @@ public/
 git clone https://github.com/mamdouhramadan/BarChartReact.git
 cd BarChartReact
 npm install
-npm start
+npm run dev
 ```
 
-Opens [http://localhost:3000](http://localhost:3000). No `.env` file is required for data (see `.env.example` for notes).
+Opens the Vite dev server (default [http://localhost:5173](http://localhost:5173)). No `.env` file is required for data (see `.env.example` for notes).
 
 ### Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm start` | Dev server with hot reload |
-| `npm run build` | Production build → `build/` |
-| `npm test` | CRA test runner |
+| `npm run dev` / `npm start` | Vite dev server with HMR |
+| `npm run build` | `tsc -b` then production bundle → **`dist/`** |
+| `npm run preview` | Serve `dist/` locally (check GitHub Pages base path) |
+| `npm test` | Vitest |
 
-`homepage` in `package.json` is set for GitHub Pages (`/BarChartReact/`), so asset paths resolve correctly when hosted under that path.
+**`vite.config.ts`** sets `base: '/BarChartReact/'` to match `homepage` in `package.json`, so assets resolve when hosted under `/BarChartReact/`.
 
 ---
 
@@ -101,7 +107,7 @@ Opens [http://localhost:3000](http://localhost:3000). No `.env` file is required
 
 ### GitHub Actions (recommended)
 
-On every push to **`main`**, [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) runs `npm ci`, `npm run build`, uploads the `build/` folder with **`actions/upload-pages-artifact`**, and deploys with **`actions/deploy-pages`**. **No `gh-pages` branch** is used.
+On every push to **`main`**, [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) runs `npm ci`, `npm run build`, uploads the **`dist/`** folder with **`actions/upload-pages-artifact`**, and deploys with **`actions/deploy-pages`**. **No `gh-pages` branch** is used.
 
 **One-time repository settings**
 
@@ -114,7 +120,7 @@ After the first successful workflow run, the live URL follows your `package.json
 
 ### Manual static upload
 
-Run `npm run build` and host the `build/` folder on any static host (optional).
+Run `npm run build` and host the `dist/` folder on any static host (optional).
 
 ---
 
@@ -135,5 +141,5 @@ This project is provided as-is for demonstration and personal use. Third-party d
 ## Credits
 
 - [Free Gold API](https://freegoldapi.com/) — public JSON dataset  
-- [Create React App](https://create-react-app.dev/)  
+- [Vite](https://vitejs.dev/)  
 - [Material UI](https://mui.com/) · [Chart.js](https://www.chartjs.org/) · [i18next](https://www.i18next.com/)
